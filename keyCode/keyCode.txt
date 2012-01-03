@@ -1,0 +1,27 @@
+-- キーコードサンプル
+
+
+-----------------------------
+-- キー操作
+-----------------------------
+local function keyOperation()
+
+	while true do
+		local key = Wait
+		Print key
+		if key then
+			Location( 1, 1 )
+			Textout( "   " )
+			Textout( ToString( key ) )
+		end
+
+		Sleep( 500 )
+	end
+
+end
+
+Window()
+Layout( "sample\\keyCode\\keyCodeLayout.txt" )
+WindowSize( 200, 100 )
+keyOperation()
+
