@@ -1,0 +1,6 @@
+mode = "unit"
+funcName = "calc"
+arg1 = 2
+arg2 = 1
+arg3 = "-"
+ret = 1

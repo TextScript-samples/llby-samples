@@ -1,0 +1,238 @@
+-- 計算機サンプル
+
+
+Specification( "sample\\calc\\calcSpecificationDocument.txt" )
+
+
+local keyA = 65 -- 答えから
+local keyC = 67 -- クリア
+local keyD = 68 -- 保留へ
+local keyH = 72 -- 保留から
+local keyK = 75 -- 計算する
+local keyL = 76 -- 左辺へ
+local keyM = 77 -- －
+local keyP = 80 -- ＋
+local keyQ = 81 -- 終了
+local keyR = 82 -- 右辺へ
+local keyW = 87 -- ÷
+local keyX = 88 -- ×
+
+
+local operator = "+"
+local side = ""
+local area = ""
+
+-----------------------------
+-- 計算処理
+-----------------------------
+local function calc( l, r, o )
+
+	local res
+
+	l = ToNumber( l )
+	r = ToNumber( r )
+
+	if o == "+" then
+		res = l + r
+	elseif o == "-" then
+		res = l - r
+	elseif o == "*" then
+		res = l * r
+	elseif o == "/" then
+		res = l / r
+	end
+
+	return res
+
+end
+
+-----------------------------
+-- 履歴追加処理
+-----------------------------
+local function makeHistory( l, r, o, res )
+
+	local str
+	str = l .. " " .. o .. " " .. r .. " = " .. res .. "\r\n"
+	return str
+
+end
+
+-----------------------------
+-- 演算子設定
+-----------------------------
+local function setOperator( o, t )
+
+	operator = o
+	Location( 16, 5 )
+	Textout( t )
+
+end
+
+-----------------------------
+-- 移動処理
+-----------------------------
+local function move()
+
+	if area == "answer" then
+
+		if side == "left" then
+			left = answer
+			right = ""
+			answer = ""
+		elseif side == "right" then
+			right = answer
+			left = ""
+			answer = ""
+		end
+
+	elseif area == "history" then
+
+		if side == "left" then
+			left = buffer
+			answer = ""
+		elseif side == "right" then
+			right = buffer
+			answer = ""
+		end
+
+	end
+
+end
+
+-----------------------------
+-- 計算アニメーション
+-----------------------------
+local function AnimationCalc()
+
+	Location( 2, 3 )
+
+	Textout( "　　　　　　　　　　　" )
+
+	local str = {
+		"■　　　　",
+		"■■　　　",
+		"■■■　　",
+		"■■■■　",
+		"■■■■■",
+	}
+
+	local k
+	local v
+	foreach k, v in str do
+
+		Textout( v )
+		Sleep( 300 )
+
+	end
+
+	Textout( "　　　　　　　　　　　" )
+
+end
+
+-----------------------------
+-- 入力チェック
+-----------------------------
+local function check( l, r )
+
+	if l == "" then
+		Location( 2, 3 )
+		Textout( "左辺を入力してください" )
+		return false
+	elseif r == "" then
+		Location( 2, 3 )
+		Textout( "右辺を入力してください" )
+		return false
+	end
+
+	return true
+end
+
+-----------------------------
+-- キー操作
+-----------------------------
+local function mainLoop()
+
+	while true do
+		local key = Wait
+		Print key
+
+		if key == keyK then
+
+			local res = check( left, right )
+			if res then
+				AnimationCalc()
+				answer = calc( left, right, operator )
+				local str = makeHistory( left, right, operator, answer )
+				history = history .. str
+			end
+
+		elseif key == keyC then
+
+			answer  = ""
+			left    = ""
+			right   = ""
+
+		elseif key == keyD then
+
+			buffer = answer
+			answer = ""
+			left   = ""
+			right  = ""
+
+		elseif key == keyP then
+
+			setOperator( "+", "＋" )
+
+		elseif key == keyM then
+
+			setOperator( "-", "－" )
+
+		elseif key == keyX then
+
+			setOperator( "*", "×" )
+
+		elseif key == keyW then
+
+			setOperator( "/", "÷" )
+
+		elseif key == keyA then
+
+			area = "answer"
+
+		elseif key == keyH then
+
+			area = "history"
+
+		elseif key == keyL then
+
+			side = "left"
+			move()
+
+		elseif key == keyR then
+
+			side = "right"
+			move()
+
+		elseif key == keyQ then
+
+			Quit()
+
+		end
+
+		Sleep( 500 )
+
+	end
+
+end
+
+
+
+
+
+-- 処理開始
+Window()
+Layout( "sample\\calc\\calcLayout.txt" )
+WindowSize( 520, 430 )
+setOperator( "+", "＋" )
+mainLoop()
+
