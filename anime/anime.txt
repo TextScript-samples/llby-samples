@@ -1,0 +1,54 @@
+-- アニメーションサンプル
+
+local keyQ = 81 -- 終了
+
+local function Animation()
+
+	local str = {
+		"（ ´∀｀）  ",
+		"（´∀｀ ）  ",
+		"（∀｀   ）  ",
+		"（ ｀    ）  ",
+		"（       ）  ",
+		"（     ´）  ",
+		"（   ´∀）  ",
+		"（ ´∀｀）  ",
+	}
+
+	Location( 0, 1 )
+
+	local k
+	local v
+	foreach k, v in str do
+
+		Textout( v )
+		Sleep( 200 )
+
+	end
+
+end
+
+-----------------------------
+-- キー操作
+-----------------------------
+local function mainLoop()
+
+	while true do
+		local key = Wait
+		Print key
+		if key == keyQ then
+			Quit()
+		else
+			Animation()
+		end
+
+		Sleep( 200 )
+	end
+
+end
+
+Window()
+Layout( "sample\\anime\\animeLayout.txt" )
+WindowSize( 200, 150 )
+mainLoop()
+
