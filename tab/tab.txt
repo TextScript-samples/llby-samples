@@ -1,0 +1,283 @@
+-- タブサンプル
+
+local keyO = 79 -- ファイルプレフィックス
+local keyQ = 81 -- 終了
+local keyR = 82 -- 読込み
+local keyS = 83 -- 保存
+local keyT = 84 -- タブプレフィックス
+
+local bTab  = false
+local bOpen = false
+
+local nActiveTab = 1
+local nFileCount = 0
+local nTabCount  = 0
+local nTabStart  = 5
+local nTabMax    = 3
+local tFileList  = {}
+local nTabRow    = nTabStart + 10
+local nTabCol    = 44
+local nRowCount  = 0
+
+-----------------------------
+-- 指定した文字数分の文字列を連結する
+-----------------------------
+local function repeatString( sSrc, nCount )
+
+	local i
+	local sTmp = sSrc
+	for i = 1, nCount do
+	
+		sSrc = sSrc .. sTmp
+	
+	end
+
+	return sSrc
+end
+
+-----------------------------
+-- 拡張子なしのファイル名を取得する
+-----------------------------
+local function getFilename( s )
+
+	local index = Find( s, "." )
+	if index >= 0 then
+		s = CutEnd( s, index - 1 )
+	end
+
+	return s
+
+end
+
+-----------------------------
+-- ファイルパスからファイル名を取得する
+-----------------------------
+local function getFilenameExt( s )
+
+	-- \\がなくなるまでCutする
+	while true do
+
+		local index = Find( s, "\\" )
+		if index < 0 then
+			break
+		end
+
+		s = CutFront( s, index + 1 )
+	end
+
+	return s
+end
+
+-----------------------------
+-- 選択されたファイルパスを取得する
+-----------------------------
+local function getFilepath( nIndex )
+
+	local i = nTabMax * ( nActiveTab - 1 ) + nIndex
+	local s = tFileList[i]
+
+	return s
+
+end
+
+-----------------------------
+-- フォルダ読込み
+-----------------------------
+local function readFile()
+	
+	tFileList = FileList( "sample\\tab\\data", "*.txt" )
+	nFileCount = TableSize( tFileList )
+	nTabCount = nFileCount / nTabMax
+
+	Location( 13, 3 )
+	Textout( repeatString( " ", 44 ) )
+	Textout( "sample\\tab\\data" )
+
+	local surplus = nFileCount - ( nTabMax * nTabCount )
+	if surplus > 0 then
+		-- 余りがあれば１つ増やす
+		nTabCount = nTabCount + 1
+	end
+	nActiveTab = 1
+
+end
+
+-----------------------------
+-- タブ画面を開く
+-----------------------------
+local function openTab()
+
+	TextoutClear()
+	LayoutClear()
+	Layout( "sample\\tab\\tabLayout.txt" )
+	WindowSize( 550, 520 )
+	readFile()
+	viewTab()
+
+end
+
+-----------------------------
+-- tab表示
+-- ／ t1  ／ t2 ＼  t3 ＼
+-----------------------------
+local function viewTab()
+
+	local k
+	local v
+	local i
+	local y = nTabStart
+	local x = 0
+	local sTab1 = ""
+	local sTab2 = ""
+
+	-- tabの作成
+	for i = 1, nTabCount do
+
+		x = ( i - 1 ) * 7 + 1
+
+		if nActiveTab > i then
+
+			sTab1 = sTab1 .. "   ____"
+			sTab2 = sTab2 .. " ／ t" .. ToString( i ) .. " "
+
+		elseif nActiveTab == i then
+
+			sTab1 = sTab1 .. "   ____  "
+			sTab2 = sTab2 .. " ／ t" .. ToString( i ) .. " ＼"
+
+		else
+
+			sTab1 = sTab1 .. " ____  "
+			sTab2 = sTab2 .. "  t" .. ToString( i ) .. " ＼"
+
+		end
+
+	end
+
+	-- tabの余白
+	x = Len( sTab2 )
+	if x < nTabCol then
+		sTab2 = sTab2 .. repeatString( "_", nTabCol - x - 2 )
+	end
+
+	-- tabの描画
+	Location( 1, y )
+	Textout( sTab1 )
+	Location( 1, y + 1 )
+	Textout( sTab2 )
+
+
+	-- ファイル名表示
+	y = y + 1
+	nRowCount = 0
+
+	foreach k, v in tFileList do
+
+		local min = ( nActiveTab - 1 ) * nTabMax
+		local max = nActiveTab * nTabMax
+
+		if ToNumber( k ) <= min then
+
+		elseif ToNumber( k ) > max then
+			break
+		else
+			y = y + 1
+			nRowCount = nRowCount + 1
+			Location( 1, y )
+			local str = v
+			str = getFilenameExt( str )
+			str = getFilename( str )
+			str = "｜o" .. ToString( nRowCount ) .. "：" .. str
+			x = Len( str )
+			str = str .. repeatString( " ", nTabCol - x - 3 )
+			str = str .. "｜"
+			Textout( str )
+		end
+
+	end
+
+
+	for i = y, nTabRow do
+
+		-- 余った分は空行にしておく
+		y = y + 1
+		Location( 1, y )
+		Textout( "｜" .. repeatString( " ", nTabCol - 5 ) .. "｜" )
+
+	end
+
+
+	-- 最下行の横線
+	Location( 1, y + 1 )
+	x = nTabCol - 5
+	Textout( "└" .. repeatString( "―", x / 2 ) .. "┘" )
+
+end
+
+
+-----------------------------
+-- キー操作
+-----------------------------
+local function mainLoop()
+
+	while true do
+		local key = Wait()
+		Print key
+
+		if key == keyT then
+			bTab = true
+		elseif key == keyO then
+			bOpen = true
+		elseif key then
+
+			if key >= 49 and key <= 58 then
+
+				if bTab then
+
+					-- タブ切り替え
+					nActiveTab = key - 48
+					if nTabCount >= nActiveTab then
+						viewTab()
+					end
+
+				elseif bOpen then
+
+					-- ファイルオープン
+					local nIndex = key - 48
+					if nRowCount >= nIndex then
+						local str = getFilepath( nIndex )
+						str = getFilenameExt( str )
+						str = getFilename( str )
+						Location( 1, 18 )
+						Textout( repeatString( " ", 44 ) )
+						Textout( "「" .. str .. "」が選択されました。" )
+					end
+
+				end
+
+			elseif key == keyR then
+
+				-- ファイル読込み
+				readFile()
+				viewTab()
+
+			elseif key == keyQ then
+
+				Quit()
+
+			end
+
+			bTab = false
+			bOpen = false
+
+		end
+
+		Sleep( 500 )
+	end
+
+end
+
+Window()
+openTab()
+mainLoop()
+
