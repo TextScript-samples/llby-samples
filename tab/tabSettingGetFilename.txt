@@ -1,0 +1,4 @@
+mode = "unit"
+funcName = "getFilename"
+arg1 = "TextScript.exe"
+ret = "TextScript"

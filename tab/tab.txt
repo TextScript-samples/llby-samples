@@ -186,7 +186,6 @@ local function viewTab()
 			Location( 1, y )
 			local str = v
 			str = getFilenameExt( str )
-			str = getFilename( str )
 			str = "｜o" .. ToString( nRowCount ) .. "：" .. str
 			x = Len( str )
 			str = str .. repeatString( " ", nTabCol - x - 3 )
@@ -247,7 +246,6 @@ local function mainLoop()
 					if nRowCount >= nIndex then
 						local str = getFilepath( nIndex )
 						str = getFilenameExt( str )
-						str = getFilename( str )
 						Location( 1, 18 )
 						Textout( repeatString( " ", 44 ) )
 						Textout( "「" .. str .. "」が選択されました。" )

@@ -1,0 +1,5 @@
+mode = "unit"
+funcName = "repeatString"
+arg1 = "a"
+arg2 = 5
+ret = "aaaaaa"

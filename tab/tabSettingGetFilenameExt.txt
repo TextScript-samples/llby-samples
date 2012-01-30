@@ -1,0 +1,4 @@
+mode = "unit"
+funcName = "getFilenameExt"
+arg1 = "C:\\Program Files\\TextScript\\TextScript.exe"
+ret = "TextScript.exe"
