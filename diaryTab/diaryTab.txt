@@ -1,0 +1,453 @@
+-- 日記タブサンプル
+
+local keyB = 66 -- 戻る
+local keyN = 78 -- 新規作成
+local keyO = 79 -- ファイルプレフィックス
+local keyQ = 81 -- 終了
+local keyR = 82 -- 読込み
+local keyS = 83 -- 保存
+local keyT = 84 -- タブプレフィックス
+
+local bTab  = false
+local bOpen = false
+
+local nActiveTab = 1
+local nFileCount = 0
+local nTabCount  = 0
+local nTabStart  = 5
+local nTabMax    = 3
+local tFileList  = {}
+local nTabRow    = nTabStart + 10
+local nTabCol    = 44
+local nRowCount  = 0
+
+-----------------------------
+-- 指定した文字数分の文字列を連結する
+-----------------------------
+local function repeatString( sSrc, nCount )
+
+	local i
+	local sTmp = sSrc
+	for i = 1, nCount do
+	
+		sSrc = sSrc .. sTmp
+	
+	end
+
+	return sSrc
+end
+
+-----------------------------
+-- 拡張子なしのファイル名を取得する
+-----------------------------
+local function getFilename( s )
+
+	local index = Find( s, "." )
+	if index >= 0 then
+		s = CutEnd( s, index - 1 )
+	end
+
+	return s
+
+end
+
+-----------------------------
+-- ファイルパスからファイル名を取得する
+-----------------------------
+local function getFilenameExt( s )
+
+	-- \\がなくなるまでCutする
+	while true do
+
+		local index = Find( s, "\\" )
+		if index < 0 then
+			break
+		end
+
+		s = CutFront( s, index + 1 )
+	end
+
+	return s
+end
+
+-----------------------------
+-- 日付から「/」を削る
+-----------------------------
+local function cutSlash( d )
+
+	local buf1 = ""
+	local buf2 = ""
+	local index = Find( d, "/" )
+	buf1 = CutEnd( d, index - 1 )
+	buf2 = CutFront( d, index + 1 )
+	d = buf1 .. buf2
+
+	index = Find( d, "/" )
+	buf1 = CutEnd( d, index - 1 )
+	buf2 = CutFront( d, index + 1 )
+
+	return buf1 .. buf2
+end
+
+-----------------------------
+-- 日付の「/」を付ける
+-----------------------------
+local function setSlash( d )
+
+	local buf1 = Cut( d, 0, 4 )
+	local buf2 = Cut( d, 4, 2 )
+	local buf3 = Cut( d, 6, 2 )
+
+	return buf1 .. "/" .. buf2 .. "/" .. buf3
+end
+
+-----------------------------
+-- タイトルを取得する
+-----------------------------
+local function readTitle( str )
+
+	local strTitle = ""
+	local idxTitle = 0
+	local idxBody  = 0
+
+	idxTitle = Find( str, "-- t --------" .. "\r\n" )
+	idxBody  = Find( str, "-- b --------" .. "\r\n" )
+
+	if idxTitle < 0 or idxBody < 0 then
+		-- 読込み失敗
+		strTitle = ""
+	else
+		strTitle = Cut( str, idxTitle + 15, idxBody - 15 - 2 )
+	end
+
+	return strTitle
+end
+
+-----------------------------
+-- ボディを取得する
+-----------------------------
+local function readBody( str )
+
+	local strBody  = ""
+	local idxBody  = 0
+
+	idxBody  = Find( str, "-- b --------" .. "\r\n" )
+
+	if idxBody < 0 then
+		-- 読込み失敗
+		strBody = ""
+	else
+		strBody = CutFront( str, idxBody  + 15 )
+	end
+
+	return strBody
+end
+
+-----------------------------
+-- 日記書込み
+-----------------------------
+local function writeDiary( d )
+
+	-- /を省く
+	local filename = cutSlash( d )
+	local path = "sample\\diaryTab\\data\\" .. filename .. ".txt"
+	local f = File( path )
+	local s = ""
+	
+	s = s .. "-- t --------" .. "\r\n"
+	s = s .. title           .. "\r\n"
+	s = s .. "-- b --------" .. "\r\n"
+	s = s .. body
+
+	f = s
+
+end
+
+-----------------------------
+-- 日記読込み
+-----------------------------
+local function readDiary( d )
+
+	-- /を省く
+	local filename = cutSlash( d )
+	local path = "sample\\diaryTab\\data\\" .. filename .. ".txt"
+
+	if FileExist( path ) == 1 then
+		local f = File( path )
+		title = readTitle( f )
+		body  = readBody( f )
+	end
+
+end
+
+-----------------------------
+-- 選択されたファイルパスを取得する
+-----------------------------
+local function getFilepath( nIndex )
+
+	local i = nTabMax * ( nActiveTab - 1 ) + nIndex
+	local s = tFileList[i]
+
+	return s
+
+end
+
+-----------------------------
+-- フォルダ読込み
+-----------------------------
+local function readFile()
+	
+	tFileList = FileList( "sample\\diaryTab\\data", "*.txt" )
+	nFileCount = TableSize( tFileList )
+	nTabCount = nFileCount / nTabMax
+
+	Location( 13, 3 )
+	Textout( repeatString( " ", 44 ) )
+	Textout( "sample\\diaryTab\\data" )
+
+	local surplus = nFileCount - ( nTabMax * nTabCount )
+	if surplus > 0 then
+		-- 余りがあれば１つ増やす
+		nTabCount = nTabCount + 1
+	end
+	nActiveTab = 1
+
+end
+
+-----------------------------
+-- 日記画面を開く
+-----------------------------
+local function openDiary( d )
+
+	TextoutClear()
+	LayoutClear()
+	Layout( "sample\\diaryTab\\diaryLayout.txt" )
+	WindowSize( 300, 600 )
+	day = d
+	readDiary( day )
+	diaryLoop()
+
+end
+
+-----------------------------
+-- タブ画面を開く
+-----------------------------
+local function openTab()
+
+	TextoutClear()
+	LayoutClear()
+	Layout( "sample\\diaryTab\\tabLayout.txt" )
+	WindowSize( 550, 550 )
+	readFile()
+	viewTab()
+
+end
+
+-----------------------------
+-- tab表示
+-- ／ t1  ／ t2 ＼  t3 ＼
+-----------------------------
+local function viewTab()
+
+	local k
+	local v
+	local i
+	local y = nTabStart
+	local x = 0
+	local sTab1 = ""
+	local sTab2 = ""
+
+	-- tabの作成
+	for i = 1, nTabCount do
+
+		x = ( i - 1 ) * 7 + 1
+
+		if nActiveTab > i then
+
+			sTab1 = sTab1 .. "   ____"
+			sTab2 = sTab2 .. " ／ t" .. ToString( i ) .. " "
+
+		elseif nActiveTab == i then
+
+			sTab1 = sTab1 .. "   ____  "
+			sTab2 = sTab2 .. " ／ t" .. ToString( i ) .. " ＼"
+
+		else
+
+			sTab1 = sTab1 .. " ____  "
+			sTab2 = sTab2 .. "  t" .. ToString( i ) .. " ＼"
+
+		end
+
+	end
+
+	-- tabの余白
+	x = Len( sTab2 )
+	if x == 0 then
+		sTab2 = sTab2 .. " "
+		x = 1
+	end
+	if x < nTabCol then
+		sTab2 = sTab2 .. repeatString( "_", nTabCol - x - 2 )
+	end
+
+	-- tabの描画
+	Location( 1, y )
+	Textout( sTab1 )
+	Location( 1, y + 1 )
+	Textout( sTab2 )
+
+
+	-- ファイル名表示
+	y = y + 1
+	nRowCount = 0
+
+	foreach k, v in tFileList do
+
+		local min = ( nActiveTab - 1 ) * nTabMax
+		local max = nActiveTab * nTabMax
+
+		if ToNumber( k ) <= min then
+
+		elseif ToNumber( k ) > max then
+			break
+		else
+			y = y + 1
+			nRowCount = nRowCount + 1
+			Location( 1, y )
+			local str = v
+			str = getFilenameExt( str )
+			str = "｜o" .. ToString( nRowCount ) .. "：" .. str
+			x = Len( str )
+			str = str .. repeatString( " ", nTabCol - x - 3 )
+			str = str .. "｜"
+			Textout( str )
+		end
+
+	end
+
+
+	for i = y, nTabRow do
+
+		-- 余った分は空行にしておく
+		y = y + 1
+		Location( 1, y )
+		Textout( "｜" .. repeatString( " ", nTabCol - 5 ) .. "｜" )
+
+	end
+
+
+	-- 最下行の横線
+	Location( 1, y + 1 )
+	x = nTabCol - 5
+	Textout( "└" .. repeatString( "―", x / 2 ) .. "┘" )
+
+end
+
+
+-----------------------------
+-- 日記キー操作
+-----------------------------
+local function diaryLoop()
+
+	while true do
+		local key = Wait()
+		Print key
+
+		if key == keyS then
+			
+			-- ファイル作成
+			writeDiary( day )
+			
+		elseif key == keyR then
+
+			-- ファイル読込み
+			readDiary( day )
+
+		elseif key == keyQ then
+
+			-- 終了
+			Quit()
+
+		elseif key == keyB then
+
+			-- 戻る
+			break
+
+		end
+
+		Sleep( 500 )
+	end
+
+end
+
+-----------------------------
+-- メニューキー操作
+-----------------------------
+local function tabLoop()
+
+	while true do
+		local key = Wait()
+		Print key
+
+		if key == keyT then
+			bTab = true
+		elseif key == keyO then
+			bOpen = true
+		elseif key then
+
+			if key >= 49 and key <= 58 then
+
+				if bTab then
+
+					-- タブ切り替え
+					nActiveTab = key - 48
+					if nTabCount >= nActiveTab then
+						viewTab()
+					end
+
+				elseif bOpen then
+
+					-- ファイルオープン
+					local nIndex = key - 48
+					if nRowCount >= nIndex then
+						local str = getFilepath( nIndex )
+						str = getFilenameExt( str )
+						str = setSlash( str )
+						openDiary( str )
+						openTab()
+					end
+
+				end
+			elseif key == keyN then
+
+				-- 新規作成
+				openDiary( GetDate() )
+				openTab()
+
+			elseif key == keyR then
+
+				-- ファイル読込み
+				readFile()
+				viewTab()
+
+			elseif key == keyQ then
+
+				Quit()
+
+			end
+
+			bTab = false
+			bOpen = false
+
+		end
+
+		Sleep( 500 )
+	end
+
+end
+
+Window()
+openTab()
+tabLoop()
+
