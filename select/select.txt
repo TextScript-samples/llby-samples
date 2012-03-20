@@ -1,0 +1,215 @@
+-- セレクトサンプル
+
+local keyF = 70 -- フォルダ読込み
+local keyQ = 81 -- 終了
+local keyR = 82 -- 読込み
+local keyS = 83 -- 保存
+local keyUp   = 38 -- 上
+local keyDown = 40 -- 下
+
+local nLimit   = 5
+local nCurrent = 1
+local nSelectIndex = 1
+local tFileList = {}
+local nFileListCount = 0
+
+-----------------------------
+-- 拡張子なしのファイル名を取得する
+-----------------------------
+local function getFilename( s )
+
+	local index = Find( s, "." )
+	if index >= 0 then
+		s = CutEnd( s, index - 1 )
+	end
+
+	return s
+
+end
+
+-----------------------------
+-- ファイルパスからファイル名を取得する
+-----------------------------
+local function getFilenameExt( s )
+
+	-- \\がなくなるまでCutする
+	while true do
+
+		local index = Find( s, "\\" )
+		if index < 0 then
+			break
+		end
+
+		s = CutFront( s, index + 1 )
+	end
+
+	return s
+end
+
+-----------------------------
+-- 選択
+-----------------------------
+local function selectUpList()
+
+	local index = nSelectIndex - 1
+	local offset = index - nCurrent
+
+	-- Min判定
+	if nSelectIndex == 1 then
+
+	else
+
+		if offset < 0 then
+			TextoutClear()
+			nCurrent = nCurrent - 1
+			nSelectIndex = index
+		else
+			nSelectIndex = index
+		end
+
+		viewList()
+
+	end
+
+end
+
+local function selectDownList()
+
+	local index = nSelectIndex + 1
+	local offset = index - nCurrent
+
+	-- Max判定
+	if nSelectIndex == nFileListCount then
+
+	else
+
+		if offset >= nLimit then
+			TextoutClear()
+			nCurrent = nCurrent + 1
+			nSelectIndex = index
+		else
+			nSelectIndex = index
+		end
+
+		viewList()
+
+	end
+
+end
+
+-----------------------------
+-- フォルダ更新
+-----------------------------
+local function readFolder()
+
+	local t = FileList( "sample\\select\\data", "*.txt" )
+	local k
+	local v
+	nCurrent = 1
+	nSelectIndex = 1
+	nFileListCount = TableSize( t )
+	tFileList = {}
+
+	foreach k, v in t do
+
+		local name = v
+		name = getFilenameExt( name )
+		name = getFilename( name )
+		tFileList[ k ] = name
+
+	end
+
+	TextoutClear()
+
+end
+
+-----------------------------
+-- リスト表示
+-----------------------------
+local function viewList()
+
+	local k
+	local v
+	local y = 1
+	local k2
+	local str = ""
+
+	foreach k, v in tFileList do
+
+		k2 = ToNumber( k )
+
+		if k2 < nCurrent then
+			-- 表示しない
+		elseif y > nLimit then
+			-- 表示しない
+			break
+		else
+
+			local name = v
+			if k2 == nSelectIndex then
+				str = str .. "■　"
+			else
+				str = str .. "□　"
+			end
+			str = str .. name
+			str = str .. "\r\n"
+			y = y + 1
+
+		end
+
+	end
+
+	Location( 1, 2 )
+	Textout( str )
+
+end
+
+-----------------------------
+-- キー操作
+-----------------------------
+local function mainLoop()
+
+	while true do
+		local key = Wait
+		Print key
+
+		if key == keyR then
+
+			-- フォルダ読込み
+			readFolder()
+			viewList()
+
+		elseif key == keyS then
+
+			-- 内容表示
+			local f = tFileList[nSelectIndex]
+			Location( 1, 8 )
+			Textout( "                    " )
+			Textout( f )
+
+		elseif key == keyUp then
+
+			selectUpList()
+
+		elseif key == keyDown then
+
+			selectDownList()
+
+		elseif key == keyQ then
+
+			Quit()
+
+		end
+
+		Sleep( 100 )
+	end
+
+end
+
+Window()
+Layout( "sample\\select\\selectLayout.txt" )
+WindowSize( 350, 350 )
+readFolder()
+viewList()
+mainLoop()
+

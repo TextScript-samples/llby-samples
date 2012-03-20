@@ -1,0 +1,4 @@
+mode = "unit"
+funcName = "getFilenameExt"
+arg1 = "sample\\select\\select.txt"
+ret = "select.txt"
