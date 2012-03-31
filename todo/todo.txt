@@ -1,0 +1,414 @@
+-- TODOサンプル
+
+local key1 = 49
+local key2 = 50
+local key3 = 51
+local key4 = 52
+
+local keyF = 70 -- フォルダ読込み
+local keyN = 78 -- 新規作成
+local keyQ = 81 -- 終了
+local keyR = 82 -- 読込み
+local keyS = 83 -- ステータス変更プレフィックス
+local keyW = 87 -- 書込み
+
+local keyLeft  = 37 -- 左
+local keyUp    = 38 -- 上
+local keyRight = 39 -- 右
+local keyDown  = 40 -- 下
+
+local nLimit   = 5
+local nCurrent = 1
+local nSelectIndex = 1
+local tFileList = {}
+local nFileListCount = 0
+
+local tFolderList = {}
+local nFolderListCount = 0
+local nCurrentFolder = 1
+local sDataPath
+
+-----------------------------
+-- 拡張子なしのファイル名を取得する
+-----------------------------
+local function getFilename( s )
+
+	local index = Find( s, "." )
+	if index >= 0 then
+		s = CutEnd( s, index - 1 )
+	end
+
+	return s
+
+end
+
+-----------------------------
+-- ファイルパスからファイル名を取得する
+-----------------------------
+local function getFilenameExt( s )
+
+	-- \\がなくなるまでCutする
+	while true do
+
+		local index = Find( s, "\\" )
+		if index < 0 then
+			break
+		end
+
+		s = CutFront( s, index + 1 )
+	end
+
+	return s
+end
+
+-----------------------------
+-- 項目の内容を取得する
+-----------------------------
+local function readContents( str, s, e )
+
+	local strTitle = ""
+	local idxTitle = 0
+	local idxBody  = 0
+
+	idxTitle = Find( str, s )
+	idxBody  = Find( str, e )
+
+	if idxTitle < 0 or idxBody < 0 then
+		-- 読込み失敗
+		strTitle = ""
+	else
+		local l = Len( s )
+		strTitle = Cut( str, idxTitle + l, idxBody - idxTitle - l )
+	end
+
+	return strTitle
+end
+
+-----------------------------
+-- 選択
+-----------------------------
+local function selectUpList()
+
+	local index = nSelectIndex - 1
+	local offset = index - nCurrent
+
+	-- Min判定
+	if nSelectIndex == 1 then
+
+	else
+
+		if offset < 0 then
+			TextoutClear()
+			nCurrent = nCurrent - 1
+			nSelectIndex = index
+		else
+			nSelectIndex = index
+		end
+
+		viewList()
+
+	end
+
+end
+
+local function selectDownList()
+
+	local index = nSelectIndex + 1
+	local offset = index - nCurrent
+
+	-- Max判定
+	if nSelectIndex == nFileListCount then
+
+	else
+
+		if offset >= nLimit then
+			TextoutClear()
+			nCurrent = nCurrent + 1
+			nSelectIndex = index
+		else
+			nSelectIndex = index
+		end
+
+		viewList()
+
+	end
+
+end
+
+local function selectRightList()
+
+	-- Max判定
+	nCurrentFolder = nCurrentFolder + 1
+	if nCurrentFolder > nFolderListCount then
+		nCurrentFolder = 1
+	end
+	sDataPath = "sample\\todo\\data\\" .. tFolderList[ nCurrentFolder ]
+
+end
+
+local function selectLeftList()
+
+	-- Min判定
+	nCurrentFolder = nCurrentFolder - 1
+	if nCurrentFolder == 0 then
+		nCurrentFolder = nFolderListCount
+	end
+	sDataPath = "sample\\todo\\data\\" .. tFolderList[ nCurrentFolder ]
+
+end
+
+local function readFolder1()
+
+	local t = FolderList( "sample\\todo\\data" )
+	local k
+	local v
+	nFolderListCount = TableSize( t )
+	foreach k, v in t do
+
+		local name = v
+		name = getFilenameExt( name )
+		tFolderList[ k ] = name
+
+	end
+
+	nCurrentFolder = 1
+	sDataPath = "sample\\todo\\data\\" .. tFolderList[ nCurrentFolder ]
+
+end
+
+-----------------------------
+-- フォルダ更新
+-----------------------------
+local function readFolder()
+
+	local t = FileList( sDataPath, "*.txt" )
+	local k
+	local v
+	nCurrent = 1
+	nSelectIndex = 1
+	nFileListCount = TableSize( t )
+	tFileList = {}
+
+	foreach k, v in t do
+
+		local name = v
+		name = getFilenameExt( name )
+		name = getFilename( name )
+		tFileList[ k ] = name
+
+	end
+
+	TextoutClear()
+	Location( 13, 1 )
+	Textout( tFolderList[ nCurrentFolder ] )
+
+end
+
+-----------------------------
+-- ファイル書込み
+-----------------------------
+local function writeFile( path )
+
+	local f = File( path )
+	local s = ""
+	
+	s = s .. "-- ca --------" .. "\r\n"
+	s = s .. category         .. "\r\n"
+	s = s .. "-- ti --------" .. "\r\n"
+	s = s .. title            .. "\r\n"
+	s = s .. "-- co --------" .. "\r\n"
+	s = s .. content          .. "\r\n"
+	s = s .. "-- en --------" .. "\r\n"
+
+	f = s
+
+end
+
+-----------------------------
+-- ファイル読込み
+-----------------------------
+local function readFile( path )
+
+	local f = File( path )
+	category	= readContents( f, "-- ca --------\r\n", "-- ti --------\r\n" )
+	title		= readContents( f, "-- ti --------\r\n", "-- co --------\r\n" )
+	content		= readContents( f, "-- co --------\r\n", "-- en --------\r\n" )
+
+end
+
+-----------------------------
+-- リスト表示
+-----------------------------
+local function viewList()
+
+	local k
+	local v
+	local y = 1
+	local k2
+	local str = ""
+
+	foreach k, v in tFileList do
+
+		k2 = ToNumber( k )
+
+		if k2 < nCurrent then
+			-- 表示しない
+		elseif y > nLimit then
+			-- 表示しない
+			break
+		else
+
+			local name = v
+			if k2 == nSelectIndex then
+				str = str .. "■　"
+			else
+				str = str .. "□　"
+			end
+			str = str .. name
+			str = str .. "\r\n"
+			y = y + 1
+
+		end
+
+	end
+
+	Location( 1, 2 )
+	Textout( str )
+
+end
+
+-----------------------------
+-- キー操作
+-----------------------------
+local function mainLoop()
+
+	local bStatus  = false
+
+	while true do
+		local key = Wait
+		Print key
+
+		if key then
+
+			if bStatus then
+
+				-- ステータス変更
+				local path = "sample\\todo\\data\\" .. tFolderList[ nCurrentFolder ]
+				path = path .. "\\" .. tFileList[nSelectIndex]
+				path = path .. ".txt"
+
+				if key == key1 then
+
+					-- 未着手
+					local to = "sample\\todo\\data\\1未着手\\" .. tFileList[nSelectIndex] .. ".txt"
+					FileMove( path, to )
+					readFolder()
+					viewList()
+
+				elseif key == key2 then
+
+					-- 着手中
+					local to = "sample\\todo\\data\\2着手中\\" .. tFileList[nSelectIndex] .. ".txt"
+					FileMove( path, to )
+					readFolder()
+					viewList()
+
+				elseif key == key3 then
+
+					-- 保留
+					local to = "sample\\todo\\data\\3保留\\" .. tFileList[nSelectIndex] .. ".txt"
+					FileMove( path, to )
+					readFolder()
+					viewList()
+
+				elseif key == key4 then
+
+					-- 完了
+					local to = "sample\\todo\\data\\4完了\\" .. tFileList[nSelectIndex] .. ".txt"
+					FileMove( path, to )
+					readFolder()
+					viewList()
+
+				end
+
+				bStatus = false
+
+			else
+
+				if key == keyF then
+
+					-- フォルダ読込み
+					readFolder()
+					viewList()
+
+				elseif key == keyN then
+
+					-- ファイル新規作成
+					local path = "sample\\todo\\data\\1未着手\\" .. title .. ".txt"
+					writeFile( path )
+					readFolder()
+					viewList()
+
+				elseif key == keyW then
+
+					-- ファイル作成
+					local path = "sample\\todo\\data\\" .. tFolderList[ nCurrentFolder ]
+					path = path .. "\\" .. tFileList[nSelectIndex]
+					path = path .. ".txt"
+					writeFile( path )
+
+				elseif key == keyR then
+
+					-- ファイル読込み
+					local path = "sample\\todo\\data\\" .. tFolderList[ nCurrentFolder ]
+					path = path .. "\\" .. tFileList[nSelectIndex]
+					path = path .. ".txt"
+					readFile( path )
+
+				elseif key == keyUp then
+
+					selectUpList()
+
+				elseif key == keyDown then
+
+					selectDownList()
+
+				elseif key == keyRight then
+
+					selectRightList()
+					readFolder()
+					viewList()
+
+				elseif key == keyLeft then
+
+					selectLeftList()
+					readFolder()
+					viewList()
+
+				elseif key == keyS then
+
+					bStatus = true
+
+				elseif key == keyQ then
+
+					Quit()
+
+				end
+
+			end
+
+		end
+
+		Sleep( 100 )
+	end
+
+end
+
+Window()
+Layout( "sample\\todo\\todoLayout.txt" )
+WindowSize( 400, 680 )
+readFolder1()
+readFolder()
+viewList()
+mainLoop()
+
