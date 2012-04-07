@@ -213,11 +213,11 @@ local function writeFile( path )
 	local s = ""
 	
 	s = s .. "-- ca --------" .. "\r\n"
-	s = s .. category         .. "\r\n"
+	s = s .. category
 	s = s .. "-- ti --------" .. "\r\n"
-	s = s .. title            .. "\r\n"
+	s = s .. title
 	s = s .. "-- co --------" .. "\r\n"
-	s = s .. content          .. "\r\n"
+	s = s .. content
 	s = s .. "-- en --------" .. "\r\n"
 
 	f = s
@@ -356,6 +356,13 @@ local function mainLoop()
 					path = path .. "\\" .. tFileList[nSelectIndex]
 					path = path .. ".txt"
 					writeFile( path )
+
+					local pathTo = "sample\\todo\\data\\" .. tFolderList[ nCurrentFolder ]
+					pathTo = pathTo .. "\\" .. title
+					pathTo = pathTo .. ".txt"
+					FileMove( path, pathTo )
+					readFolder()
+					viewList()
 
 				elseif key == keyR then
 
