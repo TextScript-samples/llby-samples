@@ -28,7 +28,6 @@ local area = ""
 local function calc( l, r, o )
 
 	local res
-
 	l = ToNumber( l )
 	r = ToNumber( r )
 
