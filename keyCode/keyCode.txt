@@ -7,7 +7,7 @@
 local function keyOperation()
 
 	while true do
-		local key = Wait
+		local key = Wait()
 		Print key
 		if key then
 			Location( 1, 1 )
