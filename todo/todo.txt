@@ -78,7 +78,7 @@ local function readContents( str, s, e )
 		strTitle = ""
 	else
 		local l = Len( s )
-		strTitle = Cut( str, idxTitle + l, idxBody - idxTitle - l )
+		strTitle = Cut( str, idxTitle + l, idxBody - idxTitle - l - 2 )
 	end
 
 	return strTitle
@@ -213,11 +213,11 @@ local function writeFile( path )
 	local s = ""
 	
 	s = s .. "-- ca --------" .. "\r\n"
-	s = s .. category
+	s = s .. category		  .. "\r\n"
 	s = s .. "-- ti --------" .. "\r\n"
-	s = s .. title
+	s = s .. title			  .. "\r\n"
 	s = s .. "-- co --------" .. "\r\n"
-	s = s .. content
+	s = s .. content		  .. "\r\n"
 	s = s .. "-- en --------" .. "\r\n"
 
 	f = s
