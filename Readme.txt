@@ -18,10 +18,3 @@ TextScriptは、テキストアプリを簡単に作成するためのスクリプト言語です。
 TextScriptは、
 http://www.vector.co.jp/soft/winnt/prog/se493923.html
 にて、ダウンロードすることが出来ます。
-
-また、利用するためには以下が必要になります。
-・Microsoft Visual C++ 2008 SP1 再頒布可能パッケージ (x86)
-　　http://www.microsoft.com/downloads/ja-jp/details.aspx?FamilyID=a5c84275-3b97-4ab7-a40d-3802b2af5fc2&DisplayLang=ja
-
-・Microsoft .NET Framework 3.5 Service Pack 1
-　　http://www.microsoft.com/downloads/ja-jp/details.aspx?FamilyID=ab99342f-5d1a-413d-8319-81da479ab0d7&DisplayLang=ja
